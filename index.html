@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Habit Tracker</title>
+    
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
     
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -15,8 +16,11 @@
             font-family: 'Inter', sans-serif;
             background-color: #F5F5F7;
             color: #1D1D1F;
+            -webkit-font-smoothing: antialiased;
         }
         .font-heading { font-family: 'Manrope', sans-serif; }
+        
+        button { border: none; background: none; cursor: pointer; font-family: inherit; }
     </style>
 </head>
 <body>
@@ -25,32 +29,14 @@
     <script>
         const { useState, useEffect } = React;
 
-        // STORAGE SICURO (funziona sia su CodePen che su GitHub Pages che su Emergent)
+        // ================== STORAGE SICURO ==================
         const storage = {
-            getHabits: () => {
-                try { return JSON.parse(localStorage.getItem('habits') || '[]'); }
-                catch(e) { return window.__tempHabits || []; }
-            },
-            setHabits: (habits) => {
-                try { localStorage.setItem('habits', JSON.stringify(habits)); }
-                catch(e) { window.__tempHabits = habits; }
-            },
-            getLogs: () => {
-                try { return JSON.parse(localStorage.getItem('habitLogs') || '[]'); }
-                catch(e) { return window.__tempLogs || []; }
-            },
-            setLogs: (logs) => {
-                try { localStorage.setItem('habitLogs', JSON.stringify(logs)); }
-                catch(e) { window.__tempLogs = logs; }
-            },
-            getSettings: () => {
-                try { return JSON.parse(localStorage.getItem('settings') || '{"palette":"#007AFF"}'); }
-                catch(e) { return { palette: "#007AFF" }; }
-            },
-            setSettings: (s) => {
-                try { localStorage.setItem('settings', JSON.stringify(s)); }
-                catch(e) {}
-            }
+            getHabits: () => { try { return JSON.parse(localStorage.getItem('habits') || '[]'); } catch(e) { return []; } },
+            setHabits: (habits) => { try { localStorage.setItem('habits', JSON.stringify(habits)); } catch(e) {} },
+            getLogs: () => { try { return JSON.parse(localStorage.getItem('habitLogs') || '[]'); } catch(e) { return []; } },
+            setLogs: (logs) => { try { localStorage.setItem('habitLogs', JSON.stringify(logs)); } catch(e) {} },
+            getSettings: () => { try { return JSON.parse(localStorage.getItem('settings') || '{"palette":"#007AFF"}'); } catch(e) { return {palette:"#007AFF"}; } },
+            setSettings: (s) => { try { localStorage.setItem('settings', JSON.stringify(s)); } catch(e) {} }
         };
 
         const THEMES = [
@@ -62,82 +48,229 @@
             {value:3, label:"Gio"}, {value:4, label:"Ven"}, {value:5, label:"Sab"}, {value:6, label:"Dom"}
         ];
 
-        const Icon = ({name, size=24, color="currentColor"}) => {
-            const svgs = {
-                Plus: React.createElement('svg',{width:size,height:size,viewBox:"0 0 24 24",fill:"none",stroke:color,strokeWidth:2.5,strokeLinecap:"round",strokeLinejoin:"round"},
+        const Icon = ({name, size = 24, color = "currentColor"}) => {
+            const icons = {
+                Plus: () => React.createElement('svg',{width:size,height:size,viewBox:"0 0 24 24",fill:"none",stroke:color,strokeWidth:2.5,strokeLinecap:"round",strokeLinejoin:"round"},
                     React.createElement('line',{x1:"12",y1:"5",x2:"12",y2:"19"}),
                     React.createElement('line',{x1:"5",y1:"12",x2:"19",y2:"12"})
                 ),
-                Check: React.createElement('svg',{width:size,height:size,viewBox:"0 0 24 24",fill:"none",stroke:color,strokeWidth:2.5,strokeLinecap:"round",strokeLinejoin:"round"},
+                Check: () => React.createElement('svg',{width:size,height:size,viewBox:"0 0 24 24",fill:"none",stroke:color,strokeWidth:2.5,strokeLinecap:"round",strokeLinejoin:"round"},
                     React.createElement('polyline',{points:"20 6 9 17 4 12"})
                 ),
-                X: React.createElement('svg',{width:size,height:size,viewBox:"0 0 24 24",fill:"none",stroke:color,strokeWidth:2,strokeLinecap:"round",strokeLinejoin:"round"},
+                X: () => React.createElement('svg',{width:size,height:size,viewBox:"0 0 24 24",fill:"none",stroke:color,strokeWidth:2,strokeLinecap:"round",strokeLinejoin:"round"},
                     React.createElement('line',{x1:"18",y1:"6",x2:"6",y2:"18"}),
                     React.createElement('line',{x1:"6",y1:"6",x2:"18",y2:"18"})
                 ),
-                ChevronLeft: React.createElement('svg',{width:size,height:size,viewBox:"0 0 24 24",fill:"none",stroke:color,strokeWidth:2.5,strokeLinecap:"round",strokeLinejoin:"round"},
+                ChevronLeft: () => React.createElement('svg',{width:size,height:size,viewBox:"0 0 24 24",fill:"none",stroke:color,strokeWidth:2.5,strokeLinecap:"round",strokeLinejoin:"round"},
                     React.createElement('polyline',{points:"15 18 9 12 15 6"})
                 ),
-                ChevronRight: React.createElement('svg',{width:size,height:size,viewBox:"0 0 24 24",fill:"none",stroke:color,strokeWidth:2.5,strokeLinecap:"round",strokeLinejoin:"round"},
+                ChevronRight: () => React.createElement('svg',{width:size,height:size,viewBox:"0 0 24 24",fill:"none",stroke:color,strokeWidth:2.5,strokeLinecap:"round",strokeLinejoin:"round"},
                     React.createElement('polyline',{points:"9 18 15 12 9 6"})
                 ),
-                Palette: React.createElement('svg',{width:size,height:size,viewBox:"0 0 24 24",fill:"none",stroke:color,strokeWidth:2,strokeLinecap:"round",strokeLinejoin:"round"},
+                Palette: () => React.createElement('svg',{width:size,height:size,viewBox:"0 0 24 24",fill:"none",stroke:color,strokeWidth:2,strokeLinecap:"round",strokeLinejoin:"round"},
                     React.createElement('circle',{cx:"13.5",cy:"6.5",r:".5",fill:color})
                 )
             };
-            return svgs[name] || null;
+            return icons[name] ? icons[name]() : null;
         };
 
+        // ================== MAIN APP ==================
         const HabitTrackerApp = () => {
             const [currentTheme] = useState(THEMES[0]);
+            const [habits, setHabits] = useState([]);
+            const [habitLogs, setHabitLogs] = useState([]);
+            const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
             const [activeTab, setActiveTab] = useState("habits");
-            const [habits] = useState([]);
-            const [selectedDate] = useState(new Date().toISOString().split('T')[0]);
+            const [showHabitModal, setShowHabitModal] = useState(false);
+            const [editingHabit, setEditingHabit] = useState(null);
 
             const today = new Date().toISOString().split('T')[0];
 
-            return React.createElement('div', {
-                style: { minHeight: '100vh', backgroundColor: '#F5F5F7', padding: '20px' }
-            },
-                React.createElement('div', { style: { maxWidth: '448px', margin: '0 auto' } },
+            // Carica dati
+            useEffect(() => {
+                setHabits(storage.getHabits());
+                setHabitLogs(storage.getLogs());
+            }, []);
+
+            // Salva dati
+            useEffect(() => storage.setHabits(habits), [habits]);
+            useEffect(() => storage.setLogs(habitLogs), [habitLogs]);
+
+            const getDayOfWeek = (dateStr) => {
+                const d = new Date(dateStr);
+                const jsDay = d.getDay();
+                return jsDay === 0 ? 6 : jsDay - 1;
+            };
+
+            const selectedDayOfWeek = getDayOfWeek(selectedDate);
+
+            const filteredHabits = habits.filter(h => {
+                if (h.frequency === "daily") return true;
+                if (h.frequency === "specific_days" && h.specific_days) return h.specific_days.includes(selectedDayOfWeek);
+                return true;
+            });
+
+            const isHabitCompleted = (id) => habitLogs.some(l => l.habit_id === id && l.date === selectedDate && l.completed);
+
+            const handleToggleHabit = (id) => {
+                const existing = habitLogs.find(l => l.habit_id === id && l.date === selectedDate);
+                if (existing) {
+                    setHabitLogs(habitLogs.map(l => 
+                        (l.habit_id === id && l.date === selectedDate) ? {...l, completed: !l.completed} : l
+                    ));
+                } else {
+                    setHabitLogs([...habitLogs, {habit_id: id, date: selectedDate, completed: true}]);
+                }
+            };
+
+            const handleSaveHabit = (data) => {
+                if (editingHabit) {
+                    setHabits(habits.map(h => h.id === editingHabit.id ? {...h, ...data} : h));
+                } else {
+                    setHabits([...habits, {...data, id: Date.now().toString()}]);
+                }
+                setShowHabitModal(false);
+                setEditingHabit(null);
+            };
+
+            const handleDeleteHabit = (id) => {
+                setHabits(habits.filter(h => h.id !== id));
+                setHabitLogs(habitLogs.filter(l => l.habit_id !== id));
+            };
+
+            const changeDate = (days) => {
+                const d = new Date(selectedDate);
+                d.setDate(d.getDate() + days);
+                const newDate = d.toISOString().split('T')[0];
+                if (newDate <= today) setSelectedDate(newDate);
+            };
+
+            const completedCount = filteredHabits.filter(h => isHabitCompleted(h.id)).length;
+            const percentage = filteredHabits.length > 0 ? Math.round((completedCount / filteredHabits.length) * 100) : 0;
+
+            const r = 60;
+            const circ = 2 * Math.PI * r;
+            const offset = circ - (percentage / 100) * circ;
+
+            return React.createElement('div', {style: {minHeight:'100vh', backgroundColor:'#F5F5F7', padding:'20px'}},
+                React.createElement('div', {style: {maxWidth:'448px', margin:'0 auto'}},
 
                     // Header
-                    React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', marginBottom: '24px' } },
+                    React.createElement('div', {style:{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'24px'}},
                         React.createElement('div', null,
-                            React.createElement('h1', { className: 'font-heading', style: { fontSize: '36px', fontWeight: 'bold' } }, 'Habit Tracker'),
-                            React.createElement('p', { style: { color: '#86868B' } }, 
-                                new Date(selectedDate).toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })
+                            React.createElement('h1', {className:'font-heading', style:{fontSize:'36px', fontWeight:'bold'}}, 'Habit Tracker'),
+                            React.createElement('p', {style:{color:'#86868B'}}, 
+                                new Date(selectedDate).toLocaleDateString('it-IT', {weekday:'long', day:'numeric', month:'long'})
                             )
                         ),
                         React.createElement('button', {
-                            style: { width: '48px', height: '48px', borderRadius: '50%', backgroundColor: currentTheme.primary, border: 'none', color: 'white' }
-                        }, React.createElement(Icon, { name: 'Palette', size: 20 }))
+                            style:{width:'48px', height:'48px', borderRadius:'50%', background:currentTheme.primary, color:'white'},
+                            onClick: () => alert("Switcher temi - da implementare")
+                        }, React.createElement(Icon, {name:'Palette', size:20}))
                     ),
 
                     // Tabs
-                    React.createElement('div', {
-                        style: { backgroundColor: '#E5E5EA', padding: '4px', borderRadius: '50px', display: 'flex', marginBottom: '24px' }
-                    },
+                    React.createElement('div', {style:{background:'#E5E5EA', padding:'4px', borderRadius:'50px', display:'flex', marginBottom:'24px'}},
                         React.createElement('button', {
                             onClick: () => setActiveTab('habits'),
-                            style: { flex: 1, padding: '12px', borderRadius: '50px', background: activeTab === 'habits' ? 'white' : 'transparent', fontWeight: 600, border: 'none' }
+                            style:{flex:1, padding:'12px', borderRadius:'50px', background: activeTab==='habits'?'white':'transparent', fontWeight:600}
                         }, 'Abitudini'),
                         React.createElement('button', {
                             onClick: () => setActiveTab('stats'),
-                            style: { flex: 1, padding: '12px', borderRadius: '50px', background: activeTab === 'stats' ? 'white' : 'transparent', fontWeight: 600, border: 'none' }
+                            style:{flex:1, padding:'12px', borderRadius:'50px', background: activeTab==='stats'?'white':'transparent', fontWeight:600}
                         }, 'Statistiche')
                     ),
 
-                    // Contenuto
-                    activeTab === 'habits' ?
-                    React.createElement('div', { style: { textAlign: 'center', padding: '80px 20px', color: '#34C759', fontSize: '18px' } },
-                        React.createElement('p', null, "✅ App caricata correttamente!"),
-                        React.createElement('p', { style: { marginTop: '12px', color: '#666' } }, 
-                            "Ora dovresti vedere il selettore data, il cerchio di progresso e il pulsante Nuova Abitudine."
+                    // Contenuto Abitudini
+                    activeTab === 'habits' ? React.createElement('div', {style:{display:'flex', flexDirection:'column', gap:'24px'}},
+
+                        // Date Selector
+                        React.createElement('div', {style:{background:'white', borderRadius:'24px', padding:'20px', boxShadow:'0 4px 20px rgba(0,0,0,0.05)'}},
+                            React.createElement('div', {style:{display:'flex', alignItems:'center', justifyContent:'space-between'}},
+                                React.createElement('button', {onClick: () => changeDate(-1)}, React.createElement(Icon, {name:'ChevronLeft', size:24})),
+                                React.createElement('div', {style:{textAlign:'center'}},
+                                    React.createElement('div', {className:'font-heading', style:{fontSize:'20px', fontWeight:'bold'}},
+                                        new Date(selectedDate).toLocaleDateString('it-IT', {weekday:'long', day:'numeric', month:'long'})
+                                    )
+                                ),
+                                React.createElement('button', {onClick: () => changeDate(1)}, React.createElement(Icon, {name:'ChevronRight', size:24}))
+                            )
+                        ),
+
+                        // Progress Circle
+                        React.createElement('div', {style:{background:'white', borderRadius:'24px', padding:'24px', boxShadow:'0 4px 20px rgba(0,0,0,0.05)'}},
+                            React.createElement('div', {style:{display:'flex', alignItems:'center', justifyContent:'space-between'}},
+                                React.createElement('div', null,
+                                    React.createElement('h3', {className:'font-heading', style:{fontSize:'18px'}}, 'Progresso Giornaliero'),
+                                    React.createElement('p', {style:{color:'#86868B'}}, `${completedCount}/${filteredHabits.length} abitudini completate`)
+                                ),
+                                React.createElement('div', {style:{position:'relative'}},
+                                    React.createElement('svg', {width:'120', height:'120', style:{transform:'rotate(-90deg)'}},
+                                        React.createElement('circle', {cx:'60', cy:'60', r:r, stroke:currentTheme.primarySoft, strokeWidth:'10', fill:'none'}),
+                                        React.createElement('circle', {cx:'60', cy:'60', r:r, stroke:currentTheme.primary, strokeWidth:'10', fill:'none',
+                                            strokeDasharray:circ, strokeDashoffset:offset, strokeLinecap:'round'})
+                                    ),
+                                    React.createElement('div', {style:{position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center'}},
+                                        React.createElement('div', {style:{fontSize:'28px', fontWeight:'bold', color:currentTheme.primary}}, `${percentage}%`)
+                                    )
+                                )
+                            )
+                        ),
+
+                        // Nuova Abitudine
+                        React.createElement('button', {
+                            onClick: () => { setEditingHabit(null); setShowHabitModal(true); },
+                            style:{width:'100%', background: `linear-gradient(135deg, ${currentTheme.primarySoft} 0%, white 100%)`, borderRadius:'24px', padding:'20px', fontSize:'18px', fontWeight:600, color:currentTheme.primary}
+                        }, 'Nuova Abitudine +'),
+
+                        // Lista Abitudini
+                        filteredHabits.length === 0 ?
+                        React.createElement('div', {style:{textAlign:'center', padding:'40px', color:'#86868B'}}, 'Nessuna abitudine per questo giorno') :
+                        React.createElement('div', {style:{display:'flex', flexDirection:'column', gap:'12px'}},
+                            filteredHabits.map(habit => {
+                                const completed = isHabitCompleted(habit.id);
+                                return React.createElement('div', {key: habit.id, style:{background:'white', borderRadius:'24px', padding:'16px', display:'flex', alignItems:'center', justifyContent:'space-between'}},
+                                    React.createElement('div', {style:{display:'flex', alignItems:'center', gap:'12px'}},
+                                        React.createElement('div', {style:{width:'12px', height:'12px', borderRadius:'50%', background: habit.color || '#007AFF'}}),
+                                        React.createElement('div', null,
+                                            React.createElement('div', {style:{fontWeight:600}}, habit.name)
+                                        )
+                                    ),
+                                    React.createElement('button', {
+                                        onClick: () => handleToggleHabit(habit.id),
+                                        style:{width:'48px', height:'48px', borderRadius:'50%', background: completed ? currentTheme.primary : '#F2F2F7', color: completed ? 'white' : '#86868B'}
+                                    }, completed ? React.createElement(Icon, {name:'Check', size:20}) : null)
+                                );
+                            })
                         )
                     ) :
-                    React.createElement('div', { style: { textAlign: 'center', padding: '80px 20px', color: '#86868B' } },
-                        React.createElement('p', null, "Sezione Statistiche - In sviluppo")
+
+                    // Tab Statistiche
+                    React.createElement('div', {style:{textAlign:'center', padding:'80px 20px', color:'#86868B'}},
+                        React.createElement('p', {style:{fontSize:'18px'}}, 'Sezione Statistiche - In sviluppo')
+                    )
+                ),
+
+                // Modal semplice (da espandere)
+                showHabitModal && React.createElement('div', {
+                    style: {position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000}
+                },
+                    React.createElement('div', {style:{background:'white', borderRadius:'24px', padding:'24px', width:'90%', maxWidth:'400px'}},
+                        React.createElement('h3', {style:{marginBottom:'20px'}}, editingHabit ? 'Modifica Abitudine' : 'Nuova Abitudine'),
+                        React.createElement('input', {
+                            placeholder: "Nome abitudine",
+                            style: {width:'100%', padding:'12px', borderRadius:'12px', border:'1px solid #ddd', marginBottom:'16px'}
+                        }),
+                        React.createElement('div', {style:{display:'flex', gap:'12px'}},
+                            React.createElement('button', {
+                                onClick: () => setShowHabitModal(false),
+                                style:{flex:1, padding:'12px', borderRadius:'12px', background:'#f0f0f0'}
+                            }, 'Annulla'),
+                            React.createElement('button', {
+                                onClick: () => { alert("Abitudine salvata (demo)"); setShowHabitModal(false); },
+                                style:{flex:1, padding:'12px', borderRadius:'12px', background:currentTheme.primary, color:'white'}
+                            }, 'Salva')
+                        )
                     )
                 )
             );
